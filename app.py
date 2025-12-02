@@ -426,7 +426,7 @@ elif page == "RQ3: Content Themes":
                     y=alt.Y('word:N', sort='-x', title='Related Word'),
                     tooltip=['word', 'count']
                 )
-                st.altair_chart(snowball_chart, use_container_width=True)
+                st.altair_chart(snowball_chart, width='stretch')
             else:
                 st.info("No significant co-occurring words found (titles might be too short).")
                 
@@ -447,7 +447,7 @@ elif page == "RQ3: Content Themes":
         #     y=alt.Y('comment_count:Q', scale=alt.Scale(type='log'), title='Comments (Log Scale)'),
         #     color='Type:N'
         # )
-        # st.altair_chart(chart, use_container_width=True)
+        # st.altair_chart(chart, width='stretch')
 
         # Show examples
         st.subheader("Example Videos")
