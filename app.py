@@ -78,14 +78,18 @@ if page == "Dashboard Home":
     
     # Aggregate daily counts
     twitch_daily = twitch_df.set_index('collection_timestamp').resample('D').size().reset_index(name='count')
-    twitch_daily['source'] = 'Twitch'
+    twitch_daily['source'] = 'Twitch Snapshots'
     twitch_daily.rename(columns={'collection_timestamp': 'date'}, inplace=True)
+
+    videos_daily = videos_df.set_index('published_at').resample('D').size().reset_index(name='count')
+    videos_daily['source'] = 'YouTube Videos'
+    videos_daily.rename(columns={'published_at': 'date'}, inplace=True)
     
     comments_daily = comments_df.set_index('published_at').resample('D').size().reset_index(name='count')
     comments_daily['source'] = 'YouTube Comments'
     comments_daily.rename(columns={'published_at': 'date'}, inplace=True)
     
-    combined_daily = pd.concat([twitch_daily, comments_daily])
+    combined_daily = pd.concat([twitch_daily, videos_daily, comments_daily])
     
     # Date Filter for Main Graph
     if not combined_daily.empty:
@@ -179,7 +183,7 @@ if page == "Dashboard Home":
             st.warning("Insufficient overlap data for scatter plot.")
 
     st.subheader("Top Content Keywords")
-    col_a, col_b = st.columns(2)
+    col_a, col_b, col_c = st.columns(3)
     
     with col_a:
         st.markdown("**Top Twitch Keywords**")
@@ -217,6 +221,24 @@ if page == "Dashboard Home":
                 st.altair_chart(bar_yt, width='stretch')
             except ValueError:
                 st.info("Not enough text data for YouTube analysis.")
+    
+    with col_c:
+        st.markdown("**Top YouTube Keywords (Comments)**")
+        if not comments_df.empty:
+            vec_comments = CountVectorizer(stop_words="english", max_features=10)
+            try:
+                bow_comments = vec_comments.fit_transform(comments_df['comment_text'].dropna().astype(str))
+                word_counts_comments = pd.DataFrame({'word': vec_comments.get_feature_names_out(), 'count': bow_comments.toarray().sum(axis=0)})
+                word_counts_comments = word_counts_comments.sort_values('count', ascending=False)
+                
+                bar_comments = alt.Chart(word_counts_comments).mark_bar(color='green').encode(
+                    x=alt.X('count', title='Frequency'),
+                    y=alt.Y('word', sort='-x', title='Keyword'),
+                    tooltip=['word', 'count']
+                )
+                st.altair_chart(bar_comments, width='stretch')
+            except ValueError:
+                st.info("Not enough text data for YouTube comments analysis.")
 
 # --- PAGE 2: RQ1 - TEMPORAL TOXICITY ---
 elif page == "RQ1: Temporal Toxicity":
@@ -338,55 +360,98 @@ elif page == "RQ2: Cross-Platform Predictor":
         st.dataframe(combined_metrics[['display_name', x_metric, y_metric]].sort_values(x_metric, ascending=False))
 
 
-# --- PAGE 4: RQ3 - CONTENT THEMES ---
+# --- PAGE 4: RQ3 - CONTENT THEMES (With Snowball Sampling) ---
 elif page == "RQ3: Content Themes":
     st.title("RQ3: Content Theme Analyzer")
-    st.markdown("**Question:** How do specific keywords influence engagement?")
+    st.markdown("**Question:** How do specific keywords influence engagement, and what related themes emerge?")
     
     st.sidebar.subheader("Keyword Analysis")
-    target_keyword = st.sidebar.text_input("Enter a keyword (e.g., 'drama', 'irl', 'ranking')", value="irl").lower()
+    target_keyword = st.sidebar.text_input("Enter a seed keyword (e.g., 'drama', 'irl', 'ranking')", value="irl").lower()
     
     # --- Data Prep ---
     # Use YouTube video titles
     df_analysis = videos_df.copy()
+    # Handle case where titles might be NaN
+    df_analysis.dropna(subset=['video_title'], inplace=True)
     df_analysis['has_keyword'] = df_analysis['video_title'].str.lower().str.contains(target_keyword)
     
-    # Get engagement stats (join with comments to get count)
+    # Get engagement stats
     comment_counts = comments_df.groupby('video_id').size().reset_index(name='comment_count')
     df_analysis = pd.merge(df_analysis, comment_counts, on='video_id', how='left')
     df_analysis['comment_count'] = df_analysis['comment_count'].fillna(0)
     
     # Calculate Stats
-    avg_with = df_analysis[df_analysis['has_keyword']]['comment_count'].mean()
-    avg_without = df_analysis[~df_analysis['has_keyword']]['comment_count'].mean()
-    
     count_with = df_analysis['has_keyword'].sum()
     
     # Display
-    st.subheader(f"Impact of keyword '{target_keyword}' on YouTube Engagement")
-    
-    col1, col2, col3 = st.columns(3)
-    col1.metric(f"Videos with '{target_keyword}'", f"{count_with}")
-    col2.metric("Avg Comments (With)", f"{avg_with:.1f}")
-    col3.metric("Avg Comments (Without)", f"{avg_without:.1f}", delta=f"{avg_with - avg_without:.1f}")
+    st.subheader(f"Analysis for keyword: '{target_keyword}'")
     
     if count_with > 0:
-        # Box plot comparison
-        # Not very useful, commenting out for now
-        # st.subheader("Engagement Distribution")
+        # 1. Engagement Impact (Original Analysis)
+        avg_with = df_analysis[df_analysis['has_keyword']]['comment_count'].mean()
+        avg_without = df_analysis[~df_analysis['has_keyword']]['comment_count'].mean()
         
+        col1, col2, col3 = st.columns(3)
+        col1.metric(f"Videos Found", f"{count_with}")
+        col2.metric("Avg Comments (With Keyword)", f"{avg_with:.1f}")
+        col3.metric("Avg Comments (Without)", f"{avg_without:.1f}", delta=f"{avg_with - avg_without:.1f}")
+        
+        # 2. Snowball Sampling: Find Co-occurring Words
+        st.subheader(f"Snowball Sampling: Themes related to '{target_keyword}'")
+        st.markdown(f"These words frequently appear in titles along with *'{target_keyword}'*. This reveals the sub-topics associated with your search.")
+        
+        # Get titles that contain the keyword
+        subset_titles = df_analysis[df_analysis['has_keyword']]['video_title']
+        
+        # Tokenize and count words in this subset
+        # We exclude the target keyword itself from the results
+        try:
+            stop_words = "english" # Use default english stop words
+            vec = CountVectorizer(stop_words=stop_words, max_features=15)
+            bow = vec.fit_transform(subset_titles)
+            
+            # Sum word counts
+            word_counts = pd.DataFrame({
+                'word': vec.get_feature_names_out(),
+                'count': bow.toarray().sum(axis=0)
+            })
+            
+            # Filter out the target keyword itself so it doesn't dominate the chart
+            word_counts = word_counts[word_counts['word'] != target_keyword]
+            word_counts = word_counts.sort_values('count', ascending=False)
+            
+            if not word_counts.empty:
+                # Bar Chart of Co-occurring words
+                snowball_chart = alt.Chart(word_counts).mark_bar(color='orange').encode(
+                    x=alt.X('count:Q', title='Frequency of Co-occurrence'),
+                    y=alt.Y('word:N', sort='-x', title='Related Word'),
+                    tooltip=['word', 'count']
+                )
+                st.altair_chart(snowball_chart, use_container_width=True)
+            else:
+                st.info("No significant co-occurring words found (titles might be too short).")
+                
+        except ValueError:
+            st.warning("Not enough text data to perform snowball sampling.")
+
+        # 3. Engagement Distribution (Boxplot)
+        # Uncomment below to enable boxplot visualization
+        # st.subheader("Engagement Distribution")
         # chart_data = df_analysis[['has_keyword', 'comment_count']]
         # chart_data['Type'] = chart_data['has_keyword'].map({True: f"With '{target_keyword}'", False: "Without"})
         
+        # if len(df_analysis) - count_with == 0:
+        #      chart_data = chart_data[chart_data['has_keyword'] == True]
+
         # chart = alt.Chart(chart_data).mark_boxplot().encode(
         #     x='Type:N',
         #     y=alt.Y('comment_count:Q', scale=alt.Scale(type='log'), title='Comments (Log Scale)'),
         #     color='Type:N'
         # )
-        # st.altair_chart(chart, width='stretch')
-        
+        # st.altair_chart(chart, use_container_width=True)
+
         # Show examples
         st.subheader("Example Videos")
         st.dataframe(df_analysis[df_analysis['has_keyword']][['video_title', 'comment_count']].head(10))
     else:
-        st.warning(f"No videos found with the keyword '{target_keyword}'.")
+        st.warning(f"No videos found with the keyword '{target_keyword}'. Try a different term.")
