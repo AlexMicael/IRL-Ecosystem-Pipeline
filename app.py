@@ -122,7 +122,7 @@ if page == "Dashboard Home":
             tooltip=['date', 'count', 'source']
         ).interactive()
         
-        st.altair_chart(chart, use_container_width=True)
+        st.altair_chart(chart, width='stretch')
     else:
         st.info("No data available to display.")
 
@@ -146,7 +146,7 @@ if page == "Dashboard Home":
             tooltip=['toxicity_score', 'count']
         ).properties(title="Distribution of Comment Toxicity (Binned)")
         
-        st.altair_chart(hist_chart, use_container_width=True)
+        st.altair_chart(hist_chart, width='stretch')
     else:
         st.warning("No comment data for toxicity histogram.")
 
@@ -174,7 +174,7 @@ if page == "Dashboard Home":
                 tooltip=['display_name', 'viewer_count', 'comment_count']
             ).properties(title="Twitch Viewership vs. YouTube Engagement").interactive()
             
-            st.altair_chart(scatter_chart, use_container_width=True)
+            st.altair_chart(scatter_chart, width='stretch')
         else:
             st.warning("Insufficient overlap data for scatter plot.")
 
@@ -196,7 +196,7 @@ if page == "Dashboard Home":
                     y=alt.Y('word', sort='-x', title='Keyword'),
                     tooltip=['word', 'count']
                 )
-                st.altair_chart(bar_twitch, use_container_width=True)
+                st.altair_chart(bar_twitch, width='stretch')
             except ValueError:
                 st.info("Not enough text data for Twitch analysis.")
 
@@ -214,7 +214,7 @@ if page == "Dashboard Home":
                     y=alt.Y('word', sort='-x', title='Keyword'),
                     tooltip=['word', 'count']
                 )
-                st.altair_chart(bar_yt, use_container_width=True)
+                st.altair_chart(bar_yt, width='stretch')
             except ValueError:
                 st.info("Not enough text data for YouTube analysis.")
 
@@ -269,7 +269,7 @@ elif page == "RQ1: Temporal Toxicity":
             tooltip=['published_at', 'comment_volume']
         )
         
-        st.altair_chart(alt.layer(bar, line).resolve_scale(y='independent'), use_container_width=True)
+        st.altair_chart(alt.layer(bar, line).resolve_scale(y='independent'), width='stretch')
         
         st.markdown("### Insights")
         st.write(f"Analysis based on **{len(creator_comments)}** comments across **{len(creator_videos)}** videos.")
@@ -331,7 +331,7 @@ elif page == "RQ2: Cross-Platform Predictor":
         # Add regression line
         reg_line = scatter.transform_regression(x_metric, y_metric).mark_line(color='red')
         
-        st.altair_chart(scatter + reg_line, use_container_width=True)
+        st.altair_chart(scatter + reg_line, width='stretch')
         
         # Data Table
         st.markdown("### Creator Data")
@@ -383,7 +383,7 @@ elif page == "RQ3: Content Themes":
         #     y=alt.Y('comment_count:Q', scale=alt.Scale(type='log'), title='Comments (Log Scale)'),
         #     color='Type:N'
         # )
-        # st.altair_chart(chart, use_container_width=True)
+        # st.altair_chart(chart, width='stretch')
         
         # Show examples
         st.subheader("Example Videos")
