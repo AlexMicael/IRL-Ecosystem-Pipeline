@@ -71,7 +71,7 @@ if page == "Dashboard Home":
     col4.metric("YouTube Comments", f"{len(comments_df):,}")
     
     st.subheader("System Status")
-    st.success(f"Data collection is ACTIVE. Last Twitch snapshot: {twitch_df['collection_timestamp'].max().strftime('%Y-%m-%d %H:%M')}")
+    st.success(f"🟢 Data collection is ACTIVE. Last Twitch snapshot: {twitch_df['collection_timestamp'].max().strftime('%Y-%m-%d %H:%M')}")
     
     # --- 1. Daily Collection Volume (Main Live Chart) ---
     st.subheader("Daily Data Collection Volume")
@@ -183,7 +183,10 @@ if page == "Dashboard Home":
             st.warning("Insufficient overlap data for scatter plot.")
 
     st.subheader("Top Content Keywords")
-    col_a, col_b, col_c = st.columns(3)
+    col_a, col_b = st.columns(2)
+
+    # Version with comment keywords as well
+    # col_a, col_b, col_c = st.columns(3)
     
     with col_a:
         st.markdown("**Top Twitch Keywords**")
@@ -222,23 +225,23 @@ if page == "Dashboard Home":
             except ValueError:
                 st.info("Not enough text data for YouTube analysis.")
     
-    with col_c:
-        st.markdown("**Top YouTube Keywords (Comments)**")
-        if not comments_df.empty:
-            vec_comments = CountVectorizer(stop_words="english", max_features=10)
-            try:
-                bow_comments = vec_comments.fit_transform(comments_df['comment_text'].dropna().astype(str))
-                word_counts_comments = pd.DataFrame({'word': vec_comments.get_feature_names_out(), 'count': bow_comments.toarray().sum(axis=0)})
-                word_counts_comments = word_counts_comments.sort_values('count', ascending=False)
+    # with col_c:
+    #     st.markdown("**Top YouTube Keywords (Comments)**")
+    #     if not comments_df.empty:
+    #         vec_comments = CountVectorizer(stop_words="english", max_features=10)
+    #         try:
+    #             bow_comments = vec_comments.fit_transform(comments_df['comment_text'].dropna().astype(str))
+    #             word_counts_comments = pd.DataFrame({'word': vec_comments.get_feature_names_out(), 'count': bow_comments.toarray().sum(axis=0)})
+    #             word_counts_comments = word_counts_comments.sort_values('count', ascending=False)
                 
-                bar_comments = alt.Chart(word_counts_comments).mark_bar(color='green').encode(
-                    x=alt.X('count', title='Frequency'),
-                    y=alt.Y('word', sort='-x', title='Keyword'),
-                    tooltip=['word', 'count']
-                )
-                st.altair_chart(bar_comments, width='stretch')
-            except ValueError:
-                st.info("Not enough text data for YouTube comments analysis.")
+    #             bar_comments = alt.Chart(word_counts_comments).mark_bar(color='green').encode(
+    #                 x=alt.X('count', title='Frequency'),
+    #                 y=alt.Y('word', sort='-x', title='Keyword'),
+    #                 tooltip=['word', 'count']
+    #             )
+    #             st.altair_chart(bar_comments, width='stretch')
+    #         except ValueError:
+    #             st.info("Not enough text data for YouTube comments analysis.")
 
 # --- PAGE 2: RQ1 - TEMPORAL TOXICITY ---
 elif page == "RQ1: Temporal Toxicity":
