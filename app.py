@@ -138,10 +138,8 @@ if page == "Dashboard Home":
     st.subheader("Toxicity Distribution (Histogram)")
     # Toxicity Histogram
     if not comments_df.empty:
-        # Create 50 bins for toxicity score (0.0 to 1.0)
         hist_data = comments_df['toxicity_score'].value_counts(bins=50, sort=False).reset_index()
         hist_data.columns = ['range', 'count']
-        # Extract the left edge of the bin for plotting
         hist_data['toxicity_score'] = hist_data['range'].apply(lambda x: x.left)
         
         hist_chart = alt.Chart(hist_data).mark_bar().encode(
@@ -363,7 +361,7 @@ elif page == "RQ2: Cross-Platform Predictor":
         st.dataframe(combined_metrics[['display_name', x_metric, y_metric]].sort_values(x_metric, ascending=False))
 
 
-# --- PAGE 4: RQ3 - CONTENT THEMES (With Snowball Sampling) ---
+# --- PAGE 4: RQ3 - CONTENT THEMES ---
 elif page == "RQ3: Content Themes":
     st.title("RQ3: Content Theme Analyzer")
     st.markdown("**Question:** How do specific keywords influence engagement, and what related themes emerge?")
@@ -390,7 +388,7 @@ elif page == "RQ3: Content Themes":
     st.subheader(f"Analysis for keyword: '{target_keyword}'")
     
     if count_with > 0:
-        # 1. Engagement Impact (Original Analysis)
+        # 1. Engagement Impact
         avg_with = df_analysis[df_analysis['has_keyword']]['comment_count'].mean()
         avg_without = df_analysis[~df_analysis['has_keyword']]['comment_count'].mean()
         
@@ -399,15 +397,14 @@ elif page == "RQ3: Content Themes":
         col2.metric("Avg Comments (With Keyword)", f"{avg_with:.1f}")
         col3.metric("Avg Comments (Without)", f"{avg_without:.1f}", delta=f"{avg_with - avg_without:.1f}")
         
-        # 2. Snowball Sampling: Find Co-occurring Words
-        st.subheader(f"Snowball Sampling: Themes related to '{target_keyword}'")
-        st.markdown(f"These words frequently appear in titles along with *'{target_keyword}'*. This reveals the sub-topics associated with your search.")
+        # 2. Snowball Sampling
+        st.subheader(f"Themes related to '{target_keyword}'")
+        st.markdown(f"These words frequently appear in titles along with *'{target_keyword}'*.")
         
         # Get titles that contain the keyword
         subset_titles = df_analysis[df_analysis['has_keyword']]['video_title']
         
         # Tokenize and count words in this subset
-        # We exclude the target keyword itself from the results
         try:
             stop_words = "english" # Use default english stop words
             vec = CountVectorizer(stop_words=stop_words, max_features=15)
@@ -419,7 +416,6 @@ elif page == "RQ3: Content Themes":
                 'count': bow.toarray().sum(axis=0)
             })
             
-            # Filter out the target keyword itself so it doesn't dominate the chart
             word_counts = word_counts[word_counts['word'] != target_keyword]
             word_counts = word_counts.sort_values('count', ascending=False)
             
