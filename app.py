@@ -433,21 +433,27 @@ elif page == "RQ3: Content Themes":
         except ValueError:
             st.warning("Not enough text data to perform snowball sampling.")
 
-        # 3. Engagement Distribution (Boxplot)
-        # Uncomment below to enable boxplot visualization
-        # st.subheader("Engagement Distribution")
-        # chart_data = df_analysis[['has_keyword', 'comment_count']]
-        # chart_data['Type'] = chart_data['has_keyword'].map({True: f"With '{target_keyword}'", False: "Without"})
+        # 3. Engagement Distribution (Density Plot)
+        st.subheader("Engagement Distribution")
+        st.markdown("Comparing the spread of comment counts for videos with and without the keyword.")
         
-        # if len(df_analysis) - count_with == 0:
-        #      chart_data = chart_data[chart_data['has_keyword'] == True]
+        chart_data = df_analysis[['has_keyword', 'comment_count']]
+        chart_data['Type'] = chart_data['has_keyword'].map({True: f"With '{target_keyword}'", False: "Without"})
+        
+        if len(df_analysis) - count_with == 0:
+            chart_data = chart_data[chart_data['has_keyword'] == True]
 
-        # chart = alt.Chart(chart_data).mark_boxplot().encode(
-        #     x='Type:N',
-        #     y=alt.Y('comment_count:Q', scale=alt.Scale(type='log'), title='Comments (Log Scale)'),
-        #     color='Type:N'
-        # )
-        # st.altair_chart(chart, width='stretch')
+        density_chart = alt.Chart(chart_data).transform_density(
+            'comment_count',
+            as_=['comment_count', 'density'],
+            groupby=['Type']
+        ).mark_area(opacity=0.5).encode(
+            x=alt.X('comment_count:Q', title='Comment Count'),
+            y=alt.Y('density:Q', title='Density'),
+            color='Type:N'
+        )
+        
+        st.altair_chart(density_chart, width='stretch')
 
         # Show examples
         st.subheader("Example Videos")
