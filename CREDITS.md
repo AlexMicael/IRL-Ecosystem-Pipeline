@@ -6,4 +6,4 @@
 
 ## Derek
 
-* TBA
+* Worked on the conclusion and some research question analysis
