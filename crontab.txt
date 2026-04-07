@@ -1,0 +1,8 @@
+# Run the Twitch data collector every 15 minutes
+*/15 * * * * /home/achenhs1/miniforge3/envs/twitch_env/bin/python /home/achenhs1/twitch_collector.py
+
+# Run the YouTube data collector every 4 hours
+0 */4 * * * /home/achenhs1/miniforge3/envs/twitch_env/bin/python /home/achenhs1/youtube_collector.py
+
+# Run the streamer map creator once a day at 3:00 AM
+0 3 * * * /home/achenhs1/miniforge3/envs/twitch_env/bin/python /home/achenhs1/map_creator.py

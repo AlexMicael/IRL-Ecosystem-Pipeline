@@ -1,0 +1,7 @@
+# Ignore environment file with secrets
+.env
+
+# Ignore log files and data
+*.log
+*.csv
+*.png
