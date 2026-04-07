@@ -22,14 +22,14 @@ flowchart TD
 	C([YouTube Data API]) --> E
 	D([Google Perspective API]) --> E
 	
-	B["**twitch_collector.py**"]
+	B["<b>twitch_collector.py</b>"]
 	B --> F[(twitch_streams_data.csv)]
 	B --> G[(twitch_users_data.csv)]
 	
-	G --> H["**map_creator.py**"]
+	G --> H["<b>map_creator.py</b>"]
 	H --> I[(streamer_map.csv)]
 	
-	I --> E["**youtube_collector.py**"]
+	I --> E["<b>youtube_collector.py</b>"]
 	E --> J[(youtube_videos_data.csv)]
 	E --> K[(youtube_comments_data.csv)]
 ```
@@ -81,10 +81,7 @@ flowchart TD
     PERSPECTIVE_API_KEY=your_perspective_api_key
 ```
 
-
-`YOUTUBE_API_KEYS` accepts a comma-separated list of keys. Both
-`map_creator.py` and `youtube_collector.py` rotate through them
-automatically when a quota is exceeded.
+`YOUTUBE_API_KEYS` accepts a comma-separated list of keys. Both `map_creator.py` and `youtube_collector.py` rotate through them automatically when a quota is exceeded.
 
 4. **Run a script manually (optional):**
 ```sh
