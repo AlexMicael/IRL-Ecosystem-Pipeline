@@ -22,6 +22,7 @@ Over a 15-week semester, the pipeline collected:
 flowchart TD
 	A([Twitch Helix API]) --> B
 	C([YouTube Data API]) --> E
+	C --> H
 	D([Google Perspective API]) --> E
 	
 	B["<b>twitch_collector.py</b>"]
